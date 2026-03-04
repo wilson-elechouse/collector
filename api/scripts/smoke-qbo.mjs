@@ -60,12 +60,14 @@ function logStep(step, status, json) {
 
 const jar = new CookieJar();
 
-// 1) Login admin/admin
+// 1) Login with the locally configured admin account
 {
+  const username = process.env.DEV_ADMIN_USER || 'admin';
+  const password = process.env.DEV_ADMIN_PASS || 'replace-me-local-admin-password';
   const { res, json } = await jfetch('/auth/login', {
     method: 'POST',
     jar,
-    body: { username: 'admin', password: 'admin' }
+    body: { username, password }
   });
   logStep('auth/login', res.status, json);
   assert(res.status === 200, `login expected 200, got ${res.status}`);

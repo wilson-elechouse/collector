@@ -102,7 +102,7 @@ const jar = new CookieJar();
 // 3) login correct creds
 {
   const username = process.env.DEV_ADMIN_USER || 'admin';
-  const password = process.env.DEV_ADMIN_PASS || 'admin';
+  const password = process.env.DEV_ADMIN_PASS || 'replace-me-local-admin-password';
   const { res, json } = await jfetch('/auth/login', {
     method: 'POST',
     jar,

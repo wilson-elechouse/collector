@@ -13,8 +13,8 @@ export default function LoginPage() {
     } catch {}
   }, []);
 
-  const [username, setUsername] = useState('admin');
-  const [password, setPassword] = useState('admin');
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -43,15 +43,15 @@ export default function LoginPage() {
   return (
     <div style={{ maxWidth: 420 }}>
       <h2>Login</h2>
-      <p style={{ color: '#666' }}>Dev credentials default to admin/admin.</p>
+      <p style={{ color: '#666' }}>Set local credentials in `infra/.env` before logging in.</p>
       <form onSubmit={onSubmit}>
         <label style={{ display: 'block', marginTop: 12 }}>
           Username
-          <input value={username} onChange={(e) => setUsername(e.target.value)} style={{ width: '100%', padding: 10, marginTop: 6 }} />
+          <input value={username} onChange={(e) => setUsername(e.target.value)} placeholder='Username' style={{ width: '100%', padding: 10, marginTop: 6 }} />
         </label>
         <label style={{ display: 'block', marginTop: 12 }}>
           Password
-          <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} style={{ width: '100%', padding: 10, marginTop: 6 }} />
+          <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder='Password' style={{ width: '100%', padding: 10, marginTop: 6 }} />
         </label>
         <button disabled={loading} style={{ marginTop: 16, padding: '10px 12px' }}>
           {loading ? 'Logging in…' : 'Login'}

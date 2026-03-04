@@ -13,12 +13,13 @@ const PORT = Number(process.env.PORT || 3000);
 const HOST = process.env.HOST || '0.0.0.0';
 
 // @fastify/session enforces secret length >= 32.
-const DEFAULT_DEV_SESSION_SECRET = 'dev_insecure_secret_change_me_32chars+';
+const DEFAULT_DEV_SESSION_SECRET = 'replace-me-with-a-local-session-secret';
 const SESSION_SECRET = process.env.SESSION_SECRET || DEFAULT_DEV_SESSION_SECRET;
 const NODE_ENV = process.env.NODE_ENV || 'development';
 
 const DEV_ADMIN_USER = process.env.DEV_ADMIN_USER || 'admin';
-const DEV_ADMIN_PASS = process.env.DEV_ADMIN_PASS || 'admin';
+const DEFAULT_DEV_ADMIN_PASS = 'replace-me-local-admin-password';
+const DEV_ADMIN_PASS = process.env.DEV_ADMIN_PASS || DEFAULT_DEV_ADMIN_PASS;
 
 const QBO_CLIENT_ID = process.env.QBO_CLIENT_ID || 'qbo-client-dev';
 const QBO_CLIENT_SECRET = process.env.QBO_CLIENT_SECRET || 'qbo-secret-dev';

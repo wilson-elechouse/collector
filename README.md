@@ -15,7 +15,7 @@ cp .env.example .env
 docker compose up --build
 ```
 
-Default credentials (dev): admin / admin
+Set local admin credentials in `infra/.env` before first login.
 
 ## Environment
 - Keep real secrets in `infra/.env`
