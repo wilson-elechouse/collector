@@ -1,0 +1,416 @@
+{
+  "version": "v1.1",
+  "scope": "bill",
+  "intent": "UI form constraints + payload validation hints + QBO mapping dictionary",
+  "defaultPolicy": {
+    "allowEmptyDefault": true,
+    "stringDefault": "",
+    "numberDefault": "",
+    "arrayDefault": [],
+    "objectDefault": {}
+  },
+  "notes": [
+    "location_ref_text is bill-level only",
+    "class_ref_text and tax_ref_text are line-level",
+    "WHT is generated as a special negative line (meta.kind = wht)",
+    "QBO IDs are tenant-specific; placeholder IDs should be replaced from tenant mapping sync",
+    "Vendor/Tax/Class/Location/Category are finite options and should use typeahead match-select instead of free text"
+  ],
+  "submission": {
+    "kind": {
+      "type": "string",
+      "required": true,
+      "const": "bill",
+      "default": "bill"
+    },
+    "client_ref": {
+      "type": "string",
+      "required": true,
+      "trim": true,
+      "minLength": 3,
+      "maxLength": 64,
+      "pattern": "^[A-Za-z0-9._-]+$",
+      "label": "Bill unique ID",
+      "default": ""
+    },
+    "memo": {
+      "type": "string",
+      "required": false,
+      "trim": true,
+      "maxLength": 500,
+      "default": ""
+    }
+  },
+  "payload": {
+    "vendor_ref_text": {
+      "type": "string",
+      "required": true,
+      "trim": true,
+      "minLength": 1,
+      "maxLength": 120,
+      "default": "",
+      "ui": {
+        "inputMode": "typeahead_select",
+        "allowFreeText": false,
+        "optionSource": "vendors",
+        "minQueryLength": 1
+      },
+      "qboRef": {
+        "entity": "Vendor",
+        "idField": "vendor_ref_id",
+        "requiredOnSubmit": false
+      }
+    },
+    "bill_date": {
+      "type": "string",
+      "required": true,
+      "format": "date",
+      "formatExample": "YYYY-MM-DD",
+      "default": ""
+    },
+    "due_date": {
+      "type": "string",
+      "required": false,
+      "format": "date",
+      "default": "",
+      "rules": [
+        "if present, must be >= bill_date"
+      ]
+    },
+    "location_ref_text": {
+      "type": "string",
+      "required": false,
+      "trim": true,
+      "maxLength": 100,
+      "scope": "bill_level_only",
+      "default": "",
+      "ui": {
+        "inputMode": "typeahead_select",
+        "allowFreeText": false,
+        "optionSource": "locations",
+        "minQueryLength": 0
+      },
+      "qboRef": {
+        "entity": "Department",
+        "idField": "location_ref_id",
+        "requiredOnSubmit": false
+      }
+    },
+    "wht": {
+      "type": "object",
+      "required": false,
+      "default": {
+        "rate": "",
+        "amount": ""
+      },
+      "properties": {
+        "rate": {
+          "type": ["number", "string"],
+          "required": false,
+          "default": "",
+          "acceptedExamples": ["0.01", "1%"],
+          "rules": [
+            "normalizedRate must be > 0 and <= 1"
+          ]
+        },
+        "amount": {
+          "type": ["number", "string"],
+          "required": false,
+          "default": "",
+          "rules": [
+            "if provided, must be >= 0 (UI converts to negative line amount)"
+          ]
+        }
+      },
+      "autoLine": {
+        "enabled": true,
+        "lineKind": "wht",
+        "replaceExistingWhtLine": true,
+        "template": {
+          "account_ref_text": "EWT Payable - BIR",
+          "description": "Withholding tax",
+          "tax_ref_text": "WHT - Out of scope",
+          "class_ref_text": "",
+          "meta": {
+            "kind": "wht"
+          }
+        },
+        "amountRule": [
+          "if wht.amount present -> use -abs(wht.amount)",
+          "else if wht.rate present -> -(sum(nonWhtLine.amount) * normalizedRate)",
+          "round to 2 decimals"
+        ]
+      }
+    },
+    "lines": {
+      "type": "array",
+      "required": true,
+      "minItems": 1,
+      "maxItems": 200,
+      "default": [
+        {
+          "account_ref_text": "",
+          "description": "",
+          "amount": "",
+          "class_ref_text": "",
+          "tax_ref_text": "",
+          "meta": {
+            "kind": "business"
+          }
+        }
+      ],
+      "item": {
+        "account_ref_text": {
+          "type": "string",
+          "required": true,
+          "trim": true,
+          "minLength": 1,
+          "maxLength": 120,
+          "default": "",
+          "ui": {
+            "inputMode": "typeahead_select",
+            "allowFreeText": false,
+            "optionSource": "accounts",
+            "minQueryLength": 1
+          },
+          "qboRef": {
+            "entity": "Account",
+            "idField": "account_ref_id",
+            "requiredOnSubmit": false
+          }
+        },
+        "description": {
+          "type": "string",
+          "required": false,
+          "trim": true,
+          "maxLength": 1000,
+          "default": ""
+        },
+        "amount": {
+          "type": ["number", "string"],
+          "required": true,
+          "precision": 2,
+          "default": "",
+          "rules": [
+            "if meta.kind = wht -> amount must be < 0",
+            "if meta.kind != wht -> amount must be > 0"
+          ]
+        },
+        "class_ref_text": {
+          "type": "string",
+          "required": false,
+          "trim": true,
+          "maxLength": 100,
+          "scope": "line_level",
+          "default": "",
+          "ui": {
+            "inputMode": "typeahead_select",
+            "allowFreeText": false,
+            "optionSource": "classes",
+            "minQueryLength": 0
+          },
+          "qboRef": {
+            "entity": "Class",
+            "idField": "class_ref_id",
+            "requiredOnSubmit": false
+          }
+        },
+        "tax_ref_text": {
+          "type": "string",
+          "required": false,
+          "trim": true,
+          "maxLength": 100,
+          "scope": "line_level",
+          "default": "",
+          "ui": {
+            "inputMode": "typeahead_select",
+            "allowFreeText": false,
+            "optionSource": "taxCodes",
+            "minQueryLength": 0
+          },
+          "qboRef": {
+            "entity": "TaxCode",
+            "idField": "tax_ref_id",
+            "requiredOnSubmit": false
+          }
+        },
+        "meta": {
+          "type": "object",
+          "required": false,
+          "default": {
+            "kind": "business"
+          },
+          "properties": {
+            "kind": {
+              "type": "string",
+              "required": false,
+              "enum": ["business", "wht"],
+              "default": "business"
+            }
+          }
+        }
+      }
+    }
+  },
+  "crossFieldRules": [
+    "sum(lines.amount) must be > 0 before validate/submit",
+    "line.location_ref_text is not allowed",
+    "when wht.rate or wht.amount exists, exactly one wht line should exist",
+    "when no wht input exists, wht line should not exist"
+  ],
+  "qboOptionDictionaries": {
+    "taxCodes": [
+      {
+        "key": "NON",
+        "label": "Non-Taxable",
+        "qbo_tax_code_id": "__SET_BY_TENANT__",
+        "active": true
+      },
+      {
+        "key": "VAT12",
+        "label": "VAT 12%",
+        "qbo_tax_code_id": "__SET_BY_TENANT__",
+        "active": true
+      },
+      {
+        "key": "WHT_OUT_SCOPE",
+        "label": "WHT - Out of scope",
+        "qbo_tax_code_id": "__SET_BY_TENANT__",
+        "active": true,
+        "recommendedForWhtAutoLine": true
+      }
+    ],
+    "classes": [
+      {
+        "key": "DEFAULT",
+        "label": "Default Class",
+        "qbo_class_id": "__SET_BY_TENANT__",
+        "active": true
+      }
+    ],
+    "locations": [
+      {
+        "key": "HQ",
+        "label": "Head Office",
+        "qbo_department_id": "__SET_BY_TENANT__",
+        "active": true
+      }
+    ],
+    "accounts": [
+      {
+        "key": "OFFICE_SUPPLIES",
+        "label": "Office Supplies",
+        "qbo_account_id": "__SET_BY_TENANT__",
+        "active": true
+      },
+      {
+        "key": "EWT_PAYABLE_BIR",
+        "label": "EWT Payable - BIR",
+        "qbo_account_id": "__SET_BY_TENANT__",
+        "active": true,
+        "recommendedForWhtAutoLine": true
+      }
+    ],
+    "vendors": [
+      {
+        "key": "DEMO_VENDOR",
+        "label": "Demo Vendor",
+        "qbo_vendor_id": "__SET_BY_TENANT__",
+        "active": true
+      }
+    ]
+  },
+  "examples": {
+    "minimalDraftWithEmptyDefaults": {
+      "kind": "bill",
+      "client_ref": "bill-20260213-001",
+      "memo": "",
+      "payload": {
+        "vendor_ref_text": "",
+        "bill_date": "",
+        "due_date": "",
+        "location_ref_text": "",
+        "wht": {
+          "rate": "",
+          "amount": ""
+        },
+        "lines": [
+          {
+            "account_ref_text": "",
+            "description": "",
+            "amount": "",
+            "class_ref_text": "",
+            "tax_ref_text": "",
+            "meta": {
+              "kind": "business"
+            }
+          }
+        ]
+      }
+    },
+    "readyForValidateWithoutWht": {
+      "kind": "bill",
+      "client_ref": "bill-20260213-002",
+      "memo": "",
+      "payload": {
+        "vendor_ref_text": "Demo Vendor",
+        "bill_date": "2026-02-13",
+        "due_date": "2026-02-20",
+        "location_ref_text": "HQ",
+        "wht": {
+          "rate": "",
+          "amount": ""
+        },
+        "lines": [
+          {
+            "account_ref_text": "Office Supplies",
+            "description": "Paper and pens",
+            "amount": 100,
+            "class_ref_text": "DEFAULT",
+            "tax_ref_text": "NON",
+            "meta": {
+              "kind": "business"
+            }
+          }
+        ]
+      }
+    },
+    "readyForValidateWithWht": {
+      "kind": "bill",
+      "client_ref": "bill-20260213-003",
+      "memo": "",
+      "payload": {
+        "vendor_ref_text": "Demo Vendor",
+        "bill_date": "2026-02-13",
+        "due_date": "2026-02-20",
+        "location_ref_text": "HQ",
+        "wht": {
+          "rate": "1%",
+          "amount": ""
+        },
+        "lines": [
+          {
+            "account_ref_text": "Office Supplies",
+            "description": "Paper and pens",
+            "amount": 100,
+            "class_ref_text": "DEFAULT",
+            "tax_ref_text": "NON",
+            "meta": {
+              "kind": "business"
+            }
+          },
+          {
+            "account_ref_text": "EWT Payable - BIR",
+            "description": "Withholding tax",
+            "amount": -1,
+            "class_ref_text": "",
+            "tax_ref_text": "WHT_OUT_SCOPE",
+            "meta": {
+              "kind": "wht"
+            }
+          }
+        ]
+      }
+    }
+  }
+}

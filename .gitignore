@@ -1,0 +1,17 @@
+node_modules/
+.next/
+.turbo/
+dist/
+
+infra/.env
+*.log
+
+tmp/
+api/tmp/
+web/tmp/
+web/tmp_*.txt
+web/tmp_*.ps1
+
+api/.env
+web/.env
+web/.env.local

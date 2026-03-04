@@ -1,0 +1,38 @@
+{
+  "submission": {
+    "kind": { "default": "bill_payment" },
+    "client_ref": { "required": true, "minLength": 3, "maxLength": 64, "default": "" },
+    "memo": { "required": false, "maxLength": 500, "default": "" }
+  },
+  "payload": {
+    "vendor_ref_text": { "required": true, "default": "" },
+    "pay_date": { "required": true, "default": "today" },
+    "bank_account_ref_text": { "required": true, "default": "Cash and cash equivalents:Cash in Bank" },
+    "ref_no": { "required": false, "default": "" },
+    "lines": {
+      "required": true,
+      "minItems": 1,
+      "item": {
+        "bill_id": { "required": true },
+        "doc_number": { "required": false },
+        "bill_date": { "required": false },
+        "due_date": { "required": false },
+        "amount": { "required": false },
+        "open_balance": { "required": true },
+        "pay_amount": { "required": true, "defaultMode": "full" },
+        "memo": { "required": false },
+        "client_ref": { "required": false }
+      }
+    }
+  },
+  "qboOptionDictionaries": {
+    "vendors": [],
+    "bankAccounts": []
+  },
+  "behavior": {
+    "allowPartialPayment": true,
+    "requireAtLeastOneBill": true,
+    "autoLoadOpenBillsOnVendorSelect": true,
+    "maxBillsPerPayment": 200
+  }
+}

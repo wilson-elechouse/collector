@@ -1,0 +1,62 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB:-collector_v3}
+      - POSTGRES_USER=${POSTGRES_USER:-collector}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-collector_pw}
+    volumes:
+      - collector_v3_db:/var/lib/postgresql/data
+      # DB initialization (dev): schema + seed on *first* volume creation
+      - ./db/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U collector -d collector_v3"]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+
+  api:
+    build: ../api
+    environment:
+      - PORT=3000
+      - NODE_ENV=development
+      - SESSION_SECRET=${SESSION_SECRET:-dev_insecure_secret_change_me_32_chars_min____}
+      - DEV_ADMIN_USER=${DEV_ADMIN_USER:-admin}
+      - DEV_ADMIN_PASS=${DEV_ADMIN_PASS:-admin}
+      - DATABASE_URL=postgres://${POSTGRES_USER:-collector}:${POSTGRES_PASSWORD:-collector_pw}@db:5432/${POSTGRES_DB:-collector_v3}
+      - QBO_CLIENT_ID=${QBO_CLIENT_ID:-qbo-client-dev}
+      - QBO_CLIENT_SECRET=${QBO_CLIENT_SECRET:-qbo-secret-dev}
+      - QBO_REDIRECT_URI=${QBO_REDIRECT_URI:-http://127.0.0.1:3000/qbo/connect/callback}
+      - QBO_ENV=${QBO_ENV:-sandbox}
+      - QBO_USE_MOCK=${QBO_USE_MOCK:-1}
+    ports:
+      - "3000:3000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  web:
+    build: ../web
+    environment:
+      - NODE_ENV=production
+      - PORT=7100
+      # internal docker network address for server-side route handlers
+      - API_BASE=http://api:3000
+    ports:
+      - "7100:7100"
+    depends_on:
+      - api
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    command: tunnel --no-autoupdate --protocol http2 run
+    profiles:
+      - tunnel
+    environment:
+      - TUNNEL_TOKEN=${CF_TUNNEL_TOKEN}
+    depends_on:
+      - web
+    restart: unless-stopped
+
+volumes:
+  collector_v3_db:
