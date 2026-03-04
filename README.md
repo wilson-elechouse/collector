@@ -20,6 +20,9 @@ Default credentials (dev): admin / admin
 ## Environment
 - Keep real secrets in `infra/.env`
 - Do not commit `infra/.env`
+- Host port bindings are configurable:
+  - `API_HOST_BIND` / `API_HOST_PORT`
+  - `WEB_HOST_BIND` / `WEB_HOST_PORT`
 - For production QBO access, set:
   - `SESSION_SECRET`
   - `QBO_CLIENT_ID`

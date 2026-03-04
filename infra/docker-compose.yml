@@ -30,7 +30,7 @@ services:
       - QBO_ENV=${QBO_ENV:-sandbox}
       - QBO_USE_MOCK=${QBO_USE_MOCK:-1}
     ports:
-      - "3000:3000"
+      - "${API_HOST_BIND:-127.0.0.1}:${API_HOST_PORT:-3000}:3000"
     depends_on:
       db:
         condition: service_healthy
@@ -43,7 +43,7 @@ services:
       # internal docker network address for server-side route handlers
       - API_BASE=http://api:3000
     ports:
-      - "7100:7100"
+      - "${WEB_HOST_BIND:-127.0.0.1}:${WEB_HOST_PORT:-7100}:7100"
     depends_on:
       - api
 
